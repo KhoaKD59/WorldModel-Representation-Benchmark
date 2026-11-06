@@ -1,3 +1,9 @@
+<div align="center">
+
+[🇬🇧 English](README.md) • [🇻🇳 Tiếng Việt](README_VI.md)
+
+</div>
+
 # 🧠 WorldModel Representation Benchmark: VAE vs. ViT vs. V-JEPA on CLEVRER
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -6,107 +12,110 @@
 [![Benchmark: CLEVRER](https://img.shields.io/badge/Benchmark-CLEVRER-green.svg)](http://clevrer.csail.mit.edu/)
 [![Framework: World Models](https://img.shields.io/badge/Domain-World%20Models%20%26%20Physical%20Reasoning-orange.svg)]()
 
-> **Nghiên cứu & Đánh giá Không Gian Biểu Diễn Trạng Thái Thị Giác (State-Space Representations) cho World Models**  
-> *Tác giả:* **Louis Đăng Khoa** (MSSV: `2510905`)
+> **An In-Depth Empirical Benchmark on Visual State-Space Representations for World Models**  
+> *Author:* **Louis Dang Khoa** (`ID: 2510905`)
 
 ---
 
-## 📌 Tổng Quan Dự Án (Overview)
+## 📌 Executive Summary
 
-Trong các kiến trúc **World Models** (Mô hình Thế giới), việc lựa chọn không gian biểu diễn trạng thái $S$ đóng vai trò quyết định đến khả năng dự đoán động lực học, suy luận vật lý và tính toán chuyển động.
+In autonomous **World Models**, selecting the visual state representation space $S$ is foundational to how agents simulate physics, predict downstream futures, and perform counterfactual reasoning. 
 
-Dự án này thực hiện nghiên cứu so sánh định lượng và trực quan hóa chuyên sâu giữa ba triết lý học biểu diễn thị giác cốt lõi (tất cả đều được **Pretrained & Frozen**), cùng với mốc **Raw Pixel** (Zero-learning baseline) trên cùng một chuỗi video vật lý phức tạp từ tập dữ liệu **CLEVRER** (CoLlision Events for Video REpresentation and Reasoning):
+This project conducts an exhaustive comparative benchmark across three distinct pretraining paradigms—all evaluated under **frozen backbone weights**—alongside a **Raw Pixel** baseline (zero-learning control), on the challenging **CLEVRER** (*Collision Events for Video REpresentation and Reasoning*) benchmark:
 
-1. **VAE (AutoencoderKL / Pixel Reconstruction):** Học nén và tái tạo pixel 2D ở mức thấp.
-2. **ViT (Supervised Vision Transformer):** Nhận diện thuộc tính ngữ nghĩa từ khung hình tĩnh có giám sát.
-3. **V-JEPA (Video Joint Embedding Predictive Architecture):** Dự đoán đặc trưng ngữ nghĩa trong không gian ẩn spatio-temporal tubelets bị che mà không cần tái tạo pixel.
+1. **VAE (AutoencoderKL / Pixel Reconstruction):** Low-level compression trained to reconstruct high-resolution 2D pixel fields.
+2. **ViT (Supervised Vision Transformer):** High-level static semantics trained via 2D supervised image classification (ImageNet).
+3. **V-JEPA (Video Joint Embedding Predictive Architecture):** Self-supervised predictive representation learning over masked spatio-temporal 3D tubelets without pixel decoding.
 
 ```
-                                  ┌───► VAE    (Tái tạo Pixel 2D)        ───► S_VAE    ┐
-Video clip X (16 frames, 4s) ─────┼───► ViT    (Phân loại có nhãn 2D)    ───► S_ViT    ├───► Trực quan hóa (t-SNE/PCA) ───► Probing & CKA
-     (CLEVRER Dataset)            └───► V-JEPA (Dự đoán đặc trưng ẩn 3D) ───► S_VJEPA ┘
+                                  ┌───► VAE    (2D Pixel Reconstruction)       ───► S_VAE    ┐
+Video clip X (16 frames, 4s) ─────┼───► ViT    (2D Supervised Classification)  ───► S_ViT    ├───► Visual Diagnostics (t-SNE/PCA) ───► Probing & CKA
+     (CLEVRER Dataset)            └───► V-JEPA (3D Masked Latent Prediction)   ───► S_VJEPA ┘
                                                 +
-                                        Raw Pixel (Baseline)
+                                      Raw Pixel (Control Baseline)
 ```
 
 ---
 
-## 📊 Bảng Kết Quả Thực Nghiệm Toàn Diện (Benchmark Summary)
+## 📊 Comprehensive Empirical Benchmark Matrix
 
-Dữ liệu được trích xuất trực tiếp từ các thực nghiệm thực tế tại `outputs/summary.csv`:
+Quantitative results evaluated directly on identical video sequences, extracted from `outputs/summary.csv`:
 
-| Tiêu chí Đánh giá | Raw Pixel | VAE (KL-f8) | ViT (Base) | V-JEPA 2 (ViT-L/16) | Ý Nghĩa / Kết Luận Thực Nghiệm |
+| Evaluation Metric | Raw Pixel | VAE (KL-f8) | ViT (Base) | V-JEPA 2 (ViT-L/16) | Key Scientific Takeaway |
 |:---|:---:|:---:|:---:|:---:|:---|
-| **Kích thước vector trạng thái ($S$)** | 3,072 | 4,096 | 768 | 1,024 | Độ nén của không gian tiềm ẩn |
-| **Probe: Màu sắc (TB 8 màu)** | 57.7% | 63.5% | **93.9%** | 87.2% | ViT vượt trội ở các đặc trưng tĩnh/bề mặt |
-| **Probe: Hình khối (Khối lập phương)** | 52.0% | 51.3% | 78.2% | **98.2%** | V-JEPA mã hóa hình học 3D vượt trội |
-| **Probe: Đếm số lượng vật thể** | 54.9% | 62.8% | 66.9% | **92.9%** | V-JEPA hiểu rõ cấu trúc thực thể trong bối cảnh |
-| **Probe: Nhiều va chạm ($\ge 3$)** | 51.4% | 55.4% | 52.7% | **75.2%** | V-JEPA nắm bắt được các tương tác vật lý |
-| **Va chạm (Cố định số vật thể)** | 48.8% | 52.3% | 53.1% | **66.5%** | Tách biệt va chạm thật sự khỏi sự thay đổi số vật thể |
-| **Mũi tên thời gian (Xuôi / Ngược probe)** | — | 50.0% | 50.0% | **97.5%** | **Phát hiện đột phá:** VAE & ViT hoàn toàn ngẫu nhiên (50%), V-JEPA nhận diện chiều thời gian gần như tuyệt đối |
-| **Độ tương đồng CKA với Raw Pixel** | 1.00 | **0.71** | 0.20 | 0.35 | VAE giữ nhiều thông tin bề mặt pixel thô |
-| **Phương sai 2 thành phần PCA đầu** | 10.3% | 4.8% | 24.6% | **35.6%** | V-JEPA có cấu trúc nội tại tập trung & rõ ràng |
-| **Số lượng tham số (M)** | 0 | 83.7M | 85.8M | 304.7M | Chi phí mô hình |
-| **Thời gian suy luận (giây / clip)** | — | 2.51s | **0.73s** | 5.46s | Tốc độ trích xuất feature trên GPU |
-| **VRAM đỉnh tiêu thụ (GB)** | — | 1.02 GB | **0.50 GB** | 1.54 GB | Bộ nhớ đồ họa cần thiết khi inference |
+| **State Dimension ($S$)** | 3,072 | 4,096 | 768 | 1,024 | Latent compactness & compression ratio |
+| **Probe: Color (Mean over 8 colors)** | 57.7% | 63.5% | **93.9%** | 87.2% | ViT excels at static/surface-level appearance |
+| **Probe: 3D Geometry (Cube Shape)** | 52.0% | 51.3% | 78.2% | **98.2%** | V-JEPA exhibits near-perfect 3D geometric grounding |
+| **Probe: Object Count ($\hat{N}$)** | 54.9% | 62.8% | 66.9% | **92.9%** | V-JEPA disentangles multi-object compositional scenes |
+| **Probe: Collisions ($\ge 3$ events)** | 51.4% | 55.4% | 52.7% | **75.2%** | V-JEPA captures complex multi-body physical collisions |
+| **Collisions (Controlled Object Count)** | 48.8% | 52.3% | 53.1% | **66.5%** | Robust collision detection invariant to scene density |
+| **Arrow of Time (Forward vs. Reverse)** | — | 50.0% | 50.0% | **97.5%** | **Breakthrough:** VAE & ViT collapse to chance level (50%); V-JEPA preserves temporal directionality |
+| **CKA Similarity with Raw Pixels** | 1.00 | **0.71** | 0.20 | 0.35 | VAE retains excessive surface-level pixel correlation |
+| **Top-2 PCA Explained Variance** | 10.3% | 4.8% | 24.6% | **35.6%** | V-JEPA forms a well-structured, low-dimensional manifold |
+| **Parameter Count (M)** | 0 | 83.7M | 85.8M | 304.7M | Model complexity |
+| **Inference Latency (sec / clip)** | — | 2.51s | **0.73s** | 5.46s | Feature extraction throughput on GPU |
+| **Peak VRAM Consumption (GB)** | — | 1.02 GB | **0.50 GB** | 1.54 GB | Hardware footprint during inference |
 
 ---
 
-## 🔬 Những Phát Hiện Cốt Lõi (Key Insights)
+## 🔬 Core Scientific Findings
 
-1. **Chiều thời gian (Arrow of Time & Causality):**
-   - VAE và ViT đạt **50.0%** (ngang đoán mò) khi phân biệt chuỗi video chạy xuôi hay chạy ngược. Điều này chứng minh việc xử lý từng khung hình độc lập làm mất hoàn toàn động lực học thời gian.
-   - V-JEPA đạt **97.5%**, chứng minh kiến trúc 3D Spatio-temporal Tubelets tự nhiên mã hóa nguyên lý nhân quả và hướng diễn tiến của thời gian.
+### 1. The Arrow of Time & Causal Grounding
+- **The Collapse of Frame-Based Models:** Both VAE and ViT achieve exactly **50.0%** accuracy on the forward-versus-reverse video probe (indistinguishable from a coin flip). Because they encode frames independently, they are fundamentally blind to the physical arrow of time.
+- **Spatio-Temporal Predictive Encoding:** V-JEPA achieves **97.5%**, demonstrating that predicting masked future/past tubelets forces the model to encode causal momentum, velocity, and irreversible physical interactions.
 
-2. **Khả năng suy luận vật lý & Va chạm (Physical Collision Dynamics):**
-   - Khi kiểm tra sự kiện va chạm ($\ge 3$ va chạm), V-JEPA đạt **75.2%** (vượt xa ViT 52.7% và VAE 55.4%).
-   - Thậm chí khi kiểm soát/cố định số vật thể trong cảnh, V-JEPA vẫn duy trì **66.5%**, chứng minh đặc trưng va chạm không bị phụ thuộc vào số lượng object.
+### 2. Physical Collision Dynamics vs. Scene Confounders
+- Under dense multi-collision scenarios ($\ge 3$ collisions), V-JEPA delivers **75.2%** linear probe accuracy, outperforming ViT (52.7%) and VAE (55.4%) by over 20%.
+- When rigorously controlling for object count to eliminate spurious correlations, V-JEPA maintains **66.5%** probe accuracy, proving its sensitivity reflects true physical contact rather than object multiplicity.
 
-3. **Bẫy tái tạo pixel (The Pixel Reconstruction Fallacy):**
-   - VAE có CKA lên tới **0.71** so với Raw Pixel. VAE dành phần lớn công suất tiềm ẩn để tái tạo màu nền sàn và ánh sáng thay vì hiểu cơ chế vật lý.
-   - V-JEPA tối ưu hóa việc dự đoán đặc trưng bị che (Masked Feature Prediction), loại bỏ chi tiết dư thừa ở cấp pixel để tập trung vào động lực học vật thể.
+### 3. The Pixel Reconstruction Fallacy
+- AutoencoderKL (VAE) exhibits a very high **Centered Kernel Alignment (CKA = 0.71)** with raw pixels. 
+- Pixel reconstruction objectives allocate the majority of latent capacity to floor lighting, shadows, and low-level textures rather than semantic scene geometry, making it inefficient for downstream dynamics modeling in World Models.
 
 ---
 
-## 🖼️ Thư Viện Trực Quan Hóa (Visual Showcase)
+## 🖼️ Visual Showcase & Latent Diagnostics
 
-### 1. Trực quan quỹ đạo trạng thái theo thời gian (Latent Dynamics & Collisions)
-Quỹ đạo tiềm ẩn trong các sự kiện va chạm vật lý:
+### 1. Dynamic Latent Trajectories & Physical Collisions (Auto-Playing Animations)
+Witness the latent state evolution during real physical collision events:
 
-| Clip 231 (Tương tác va chạm) | Clip 6 (Chuyển động liên tục) |
+| Clip 231 (Multi-Body Collision Event) | Clip 6 (Continuous Inertial Motion) |
 |:---:|:---:|
 | ![Latent Dynamics 231](outputs/figures/12_anim_clip231.gif) | ![Latent Dynamics 6](outputs/figures/12_anim_clip6.gif) |
 
-### 2. Bản đồ nhiệt Linear Probe trên các thuộc tính
-V-JEPA chiếm ưu thế gần như áp đảo ở các thuộc tính cấu trúc 3D, số lượng và va chạm:
+### 2. Linear Probing Heatmap across Physical Attributes
+V-JEPA demonstrates consistent dominance in 3D geometry, object numerosity, and interaction dynamics:
 ![Probe Heatmap](outputs/figures/06_probe_heatmap.png)
 
-### 3. Phân bố không gian trạng thái t-SNE & Quỹ đạo 3D PCA
-So sánh mức độ gom cụm theo đặc trưng vật lý giữa các mô hình:
+### 3. Latent Manifold Structure: t-SNE & 3D PCA Trajectories
+Comparing clustering quality and geometric coherence across latent spaces:
 
-| Không gian t-SNE | Quỹ đạo 3D PCA |
+| 2D t-SNE Embedding | 3D PCA Trajectory |
 |:---:|:---:|
 | ![t-SNE Latent Space](outputs/figures/02_tsne.png) | ![3D PCA Trajectory](outputs/figures/04_pca3d.png) |
 
-### 4. Ma trận tương đồng biểu diễn (Centered Kernel Alignment - CKA)
+### 4. Representation Alignment Matrix (Linear CKA)
+Cross-model representational similarity revealing VAE's high alignment with raw pixel space:
 ![CKA Similarity](outputs/figures/07_cka.png)
 
-### 5. Biểu diễn đặc trưng không gian (Spatial Patch PCA to RGB)
+### 5. Spatial Feature Disentanglement (Patch PCA to RGB)
+Projecting spatial patch representations into RGB channels illustrates localized semantic segmentation:
 ![Patch PCA](outputs/figures/05_patch_pca_rgb.png)
 
 ---
 
-## 📁 Cấu Trúc Dự Án (Repository Structure)
+## 📁 Repository Structure
 
 ```
 WorldModel/
-├── .gitignore                      # Loại trừ các file dữ liệu nặng (*.zip, *.pt, *.npy, wm/)
-├── LICENSE                         # Giấy phép MIT
-├── README.md                       # Tài liệu báo cáo toàn diện & hướng dẫn
-├── requirements.txt                # Danh sách thư viện phụ thuộc
-├── VAE_ViT_VJEPA_CLEVRER.ipynb     # Jupyter Notebook chính chứa toàn bộ pipeline thực nghiệm
-└── outputs/                        # Thư mục lưu trữ kết quả thực nghiệm
-    ├── figures/                    # Toàn bộ biểu đồ phân tích và ảnh động GIF (01 - 12)
+├── .gitignore                      # Excludes heavy datasets, checkpoints (*.pt, *.npy, wm/)
+├── LICENSE                         # MIT Open-Source License
+├── README.md                       # Comprehensive English documentation (You are here)
+├── README_VI.md                    # Bản tài liệu tiếng Việt
+├── requirements.txt                # Precise Python dependencies
+├── VAE_ViT_VJEPA_CLEVRER.ipynb     # Primary experimental Jupyter Notebook
+└── outputs/                        # Experimental benchmark artifacts
+    ├── figures/                    # Publication-ready figures and animations (01 - 12)
     │   ├── 01_clevrer_preview.png
     │   ├── 02_tsne.png
     │   ├── 03_pca_spectrum.png
@@ -121,84 +130,83 @@ WorldModel/
     │   ├── 11_change_clip6.png
     │   ├── 12_anim_clip231.gif
     │   └── 12_anim_clip6.gif
-    └── *.csv                       # Toàn bộ bảng số liệu định lượng (summary, probe, cka, cost, v.v.)
+    └── *.csv                       # Full quantitative metrics (summary, probe, cka, cost, etc.)
 ```
 
-> **Lưu ý về kích thước:** Các file cache nặng (`CLEVRER_videos.npy` ~943MB, `S_*_time.npy`, checkpoint weights `vjepa2_1_vitl_384.pt` ~5.1GB, và video dataset `data/` ~6.2GB) đã được thiết lập tự động bỏ qua qua `.gitignore` nhằm tuân thủ giới hạn lưu trữ của GitHub (dưới 100MB/file).
+> **Storage Notice:** All massive files (`CLEVRER_videos.npy` ~943MB, `S_*_time.npy`, model weights `vjepa2_1_vitl_384.pt` ~5.1GB, and raw videos `data/` ~6.2GB) are excluded via `.gitignore` to maintain a lightweight repository size (~12.8 MB) compliant with GitHub limits.
 
 ---
 
-## ⚙️ Cài Đặt & Hướng Dẫn Tái Hiện (Quickstart & Reproduction)
+## ⚙️ Quickstart & Reproduction Guide
 
-### 1. Khởi tạo môi trường ảo
+### 1. Environment Setup
 
 ```bash
 # Clone repository
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/KhoaKD59/WorldModel-Representation-Benchmark.git
+cd WorldModel-Representation-Benchmark
 
-# Khởi tạo môi trường ảo
+# Create and activate virtual environment
 python -m venv wm
 
-# Kích hoạt môi trường:
-# Trên Windows:
+# On Windows:
 wm\Scripts\activate
-# Trên Linux/macOS:
+# On Linux/macOS:
 source wm/bin/activate
 ```
 
-### 2. Cài đặt các gói phụ thuộc
+### 2. Dependency Installation
 
 ```bash
-# Cài đặt PyTorch với hỗ trợ CUDA 12.1 (khuyên dùng để tăng tốc trên GPU)
+# Install PyTorch with CUDA 12.1 support (recommended for GPU acceleration)
 pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# Cài đặt các thư viện từ requirements.txt
+# Install required packages
 pip install -r requirements.txt
 ```
 
-### 3. Chuẩn bị Dữ liệu & Trọng số Pretrained
+### 3. Data & Checkpoint Preparation
 
-- **Tập dữ liệu CLEVRER:**
-  - Tải tập validation video và annotation từ trang chủ [CLEVRER](http://clevrer.csail.mit.edu/).
-  - Giải nén vào thư mục `data/clevrer_val/`.
-- **Pretrained Weights cho V-JEPA 2:**
-  - Tải checkpoint `vjepa2_1_vitl_384.pt` từ nguồn chính thức của Meta FAIR / V-JEPA repository và lưu vào `data/`.
+- **CLEVRER Dataset:**
+  - Download the validation video clips and annotations from [CLEVRER Official Site](http://clevrer.csail.mit.edu/).
+  - Extract video clips into `data/clevrer_val/`.
+- **Pretrained V-JEPA 2 Checkpoint:**
+  - Obtain `vjepa2_1_vitl_384.pt` from Meta FAIR's official V-JEPA repository and place it in `data/`.
 
-### 4. Chạy thực nghiệm
+### 4. Running Experiments
 
-Mở Jupyter Lab / Notebook để chạy tuần tự:
+Launch Jupyter Notebook / Lab to reproduce all diagnostics and tables:
 
 ```bash
 jupyter notebook VAE_ViT_VJEPA_CLEVRER.ipynb
 ```
 
-Tất cả kết quả biểu đồ và số liệu định lượng sẽ được tự động xuất ra thư mục `outputs/`.
+All evaluation tables and visual diagnostics will be automatically populated into `outputs/`.
 
 ---
 
-## 📖 Trích Dẫn & Tham Khảo (Citations & References)
+## 📖 Citation & References
 
-Nếu dự án này hữu ích cho nghiên cứu của bạn, vui lòng tham khảo:
+If you find this benchmark or codebase helpful in your research on World Models and visual representations, please cite:
 
 ```bibtex
-@misc{dang2026worldmodelclevrer,
+@misc{dangkhoa2026worldmodelclevrer,
   author = {Louis Dang Khoa},
   title = {A Comparative Benchmark of Visual State-Space Representations (VAE vs. ViT vs. V-JEPA) for World Models on Physical CLEVRER Dynamics},
   year = {2026},
   publisher = {GitHub},
-  howpublished = {\url{https://github.com/}}
+  howpublished = {\url{https://github.com/KhoaKD59/WorldModel-Representation-Benchmark}}
 }
 ```
 
-- **CLEVRER Benchmark:** Yi et al., *"CLEVRER: Collision Events for Video Representation and Reasoning"*, ICLR 2020.
-- **V-JEPA:** Bardes et al., *"Revisiting Feature Prediction for Learning Visual Representations from Video"*, Meta AI Research, 2024.
-- **Vision Transformer (ViT):** Dosovitskiy et al., *"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale"*, ICLR 2021.
-- **AutoencoderKL (VAE):** Rombach et al., *"High-Resolution Image Synthesis with Latent Diffusion Models"*, CVPR 2022.
+### Key References
+- **CLEVRER Benchmark:** K. Yi et al., *"CLEVRER: Collision Events for Video Representation and Reasoning"*, ICLR 2020.
+- **V-JEPA:** A. Bardes et al., *"Revisiting Feature Prediction for Learning Visual Representations from Video"*, Meta AI Research, 2024.
+- **Vision Transformer (ViT):** A. Dosovitskiy et al., *"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale"*, ICLR 2021.
+- **AutoencoderKL (VAE):** R. Rombach et al., *"High-Resolution Image Synthesis with Latent Diffusion Models"*, CVPR 2022.
 
 ---
 
-## 📄 Bản Quyền (License)
+## 📄 License
 
-Dự án được phân phối dưới giấy phép **MIT License**. Chi tiết xem tại [LICENSE](LICENSE).
-
+This repository is distributed under the **MIT License**. See [LICENSE](LICENSE) for full details.
