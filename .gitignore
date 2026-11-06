@@ -1,0 +1,67 @@
+# ==============================================================================
+# Git Ignore - WorldModel Representation Learning Benchmark (CLEVRER)
+# ==============================================================================
+
+# Python Virtual Environments
+wm/
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# ==============================================================================
+# Large Datasets and Video Files (CLEVRER dataset ~6GB+)
+# ==============================================================================
+data/
+*.mp4
+*.avi
+*.mov
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# ==============================================================================
+# Model Weights and Large Pretrained Checkpoints (V-JEPA 2 ~5GB+)
+# ==============================================================================
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+
+# ==============================================================================
+# Heavy Cached Binary Arrays & Tensors (>100MB violates GitHub hard limit)
+# Note: Keep lightweight CSV tables and visual figures/GIFs tracked!
+# ==============================================================================
+outputs/*.npy
+outputs/*.npz
+*.npy
+*.npz
+
+# Operating System & IDE Configurations
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs and Task Outputs
+*.log
+scratch/
+
